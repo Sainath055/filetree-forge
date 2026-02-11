@@ -1,0 +1,63 @@
+out
+dist
+node_modules
+.vscode-test/
+*.vsix
+
+
+.DS_Store
+*.log
+.vscode/
+*.map
+
+
+
+
+
+
+# ./.eslintrc.json
+# ./.vscode/launch.json
+# ./.vscode/tasks.json
+# ./CHANGELOG.md
+# ./DEVELOPER_GUIDE.md
+# ./INSTALLATION.md
+# ./PROJECT_OVERVIEW.md
+# ./QUICKSTART.md
+# ./README.md
+# ./examples/USAGE_EXAMPLES.md
+# ./examples/example-tree.json
+# ./examples/example-tree.md
+# ./package.json
+# ./src/commands/applyChanges.ts
+# ./src/commands/generateTree.ts
+# ./src/commands/previewChanges.ts
+# ./src/commands/stateManager.ts
+# ./src/commands/toggleMode.ts
+# ./src/diff/diffTrees.ts
+# ./src/extension.ts
+# ./src/fs/applyDiff.ts
+# ./src/parser/jsonParser.ts
+# ./src/parser/markdownParser.ts
+# ./src/parser/treeSerializer.ts
+# ./src/types.ts
+# ./src/utils/pathUtils.ts
+# ./src/utils/validation.ts
+# ./tsconfig.json
+
+
+# ////
+
+# src/commands/applyChanges.ts//
+# src/commands/generateTree.ts//
+# src/commands/previewChanges.ts//
+# src/commands/stateManager.ts//
+# src/diff/diffTrees.ts
+# src/extension.ts//
+# src/fs/applyDiff.ts
+# src/fs/driftDetector.ts//
+# src/fs/scanTree.ts
+# src/parser/markdownParser.ts//
+# src/parser/treeSerializer.ts//
+# src/types.ts//
+# src/utils/pathUtils.ts
+# src/utils/validation.ts

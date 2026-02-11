@@ -1,0 +1,104 @@
+{
+  "name": "filetreeforge",
+  "displayName": "FILETREEFORGE",
+  "description": "Edit and apply project folder structures using Markdown representation",
+  "version": "2.1.0",
+  "publisher": "filetreeforge",
+  "engines": {
+    "vscode": "^1.109.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:filetreeforge.generateMarkdown",
+    "onCommand:filetreeforge.applyChanges",
+    "onCommand:filetreeforge.previewChanges"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "filetreeforge.generateMarkdown",
+        "title": "FILETREEFORGE: Generate Markdown Tree"
+      },
+      {
+        "command": "filetreeforge.applyChanges",
+        "title": "FILETREEFORGE: Apply Changes to Filesystem"
+      },
+      {
+        "command": "filetreeforge.previewChanges",
+        "title": "FILETREEFORGE: Preview Changes"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "filetreeforge.generateMarkdown",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@10"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "filetreeforge.previewChanges",
+        "key": "ctrl+shift+enter",
+        "mac": "cmd+shift+enter",
+        "when": "editorTextFocus && editorLangId == markdown"
+      },
+      {
+        "command": "filetreeforge.applyChanges",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "editorTextFocus && (editorLangId == markdown || editorLangId == plaintext)"
+      }
+    ],
+    "configuration": {
+      "title": "FILETREEFORGE",
+      "properties": {
+        "filetreeforge.confirmBeforeApply": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show confirmation dialog before applying changes"
+        },
+        "filetreeforge.ignorePatterns": {
+          "type": "array",
+          "default": [
+            "node_modules",
+            ".git",
+            ".vscode",
+            "dist",
+            "out",
+            "build"
+          ],
+          "description": "Patterns to ignore when generating tree"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/uuid": "^10.0.0",
+    "@types/vscode": "^1.109.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^8.57.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "or": "^0.2.0",
+    "uuid": "^9.0.1"
+  }
+}
