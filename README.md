@@ -1,32 +1,40 @@
 # FILETREEFORGE v1.0
 
-**A declarative filesystem refactoring language inside Markdown.**
+**Declarative filesystem refactoring inside Markdown.**
 
-Complete architectural rewrite with explicit operation markers. No more UUID-based diffing or implicit changes.
+FILETREEFORGE lets you edit your project structure as a clean Markdown tree and explicitly declare filesystem operations — safely, predictably, and visually.
 
-## 🎯 What Changed in v1.0
+No hidden diff engines.  
+No UUIDs.  
+No implicit rename guessing.
 
-### REMOVED ❌
+You decide what happens.
 
-- UUID system (`<!-- id: xxx -->`)
-- Implicit diff-based operations
-- Rename guessing
-- Structural auto-diff
-- JSON support
+---
 
-### ADDED ✅
+# 🚀 Features
 
-- **Explicit operation markers**: `[+]`, `[-]`, `[~ newName]`
-- **Structure validation**: Tree must match filesystem before operations
-- **Declarative approach**: You explicitly mark what you want
+- 📁 Generate real folder structure as Markdown
+- ✏ Edit structure visually
+- ➕ Create files and folders
+- ➖ Delete files and folders
+- 🔁 Rename files and folders
+- 👁 Safe Preview before apply
+- 🛡 Strict validation & workspace safety
+- 🧹 Auto-close preview & tree tabs after apply
 
-## 📝 How It Works
+---
 
-### 1. Generate Clean Tree
+# 🧭 How It Works
 
-Right-click folder → **Generate Markdown Tree**
+## 1️⃣ Generate Tree
 
-```markdown
+Right-click any folder in Explorer  
+→ **FILETREEFORGE: Generate Markdown Tree**
+
+Example output:
+
+```md
 app/
 ├─ api/
 │ ├─ functions/
@@ -38,197 +46,135 @@ app/
 └─ page.js
 ```
 
-**No markers, no UUIDs, just clean structure.**
+Clean structure. No markers. No metadata.
 
-### 2. Mark Your Operations
+2️⃣ Declare Operations
 
-Add explicit markers to declare what you want:
+You explicitly mark what you want to change.
 
-#### Create: `[+]`
+➕ Create
 
-```markdown
-app/
-├─ api/
-│ ├─ functions/
-│ │ └─ route.js
-│ │ └─ helpers.js [+]
-```
+Add [+] at end of line:
 
-#### Delete: `[-]`
+helpers.js [+]
 
-```markdown
-app/
-├─ api/
-│ ├─ functions/
-│ │ └─ route.js [-]
-```
+➖ Delete
 
-#### Rename: `[~ newName]`
+Add [-] at end of line:
 
-```markdown
-app/
-├─ api/
-│ ├─ functions/ [~ handlers]
-```
+route.js [-]
 
-### 3. Preview - `Ctrl+Shift+Enter`
+🔁 Rename
 
-```
+Use [~ newName]:
+
+functions/ [~ handlers]
+
+3️⃣ Preview Changes
+
+Press:
+
+Ctrl + Shift + Enter
+
+Preview shows a dry run:
+
 PREVIEW MODE
-────────────
+═══════════════════════════════
+
+This is a dry run. No changes have been applied yet.
 
 CREATE:
-  + api/functions/helpers.js
+
+- api/helpers.js
 
 RENAME:
-  api/functions → api/handlers
-```
+api/functions → api/handlers
 
-### 4. Apply - `Ctrl+Enter`
+Nothing is modified yet.
 
-Changes applied! Tree and preview tabs close automatically.
+4️⃣ Apply Changes
 
-## 📋 Operation Markers
+Press:
 
-### `[+]` - Create
+Ctrl + Enter
 
-Creates a new file or folder.
+Changes are applied safely.
 
-- Must appear at end of line
-- One space before marker
+Tree and preview tabs close automatically.
 
-### `[-]` - Delete
+📋 Operation Markers
+Marker Meaning
+[+] Create file or folder
+[-] Delete file or folder
+[~ newName] Rename file or folder
+⚠ Structure Validation (Important)
 
-Deletes a file or folder.
+The tree structure — excluding markers — must match the real filesystem.
 
-- Cannot delete root
-- Confirmation required
+If it does not match, the extension will block execution.
 
-### `[~ newName]` - Rename
+This prevents:
 
-Renames a file or folder.
+Accidental mass deletes
 
-- Format: `[~ newName]`
-- Cannot rename root
+Stale diffs
 
-## 🔒 Structure Validation
+Applying changes to outdated structure
 
-**CRITICAL:** The tree structure (minus markers) must exactly match the filesystem.
+If you see a mismatch error:
 
-### ✅ Valid
+→ Regenerate the tree to refresh baseline.
 
-```markdown
-# Filesystem has: app/page.js, app/layout.js
+⌨ Keyboard Shortcuts
+Action Shortcut
+Preview Ctrl + Shift + Enter
+Apply Ctrl + Enter
+Save Ctrl + S (does NOT apply)
+🔄 Complete Workflow
 
-app/
-├─ page.js
-└─ layout.js [~ main.js]
-```
-
-### ❌ Invalid
-
-```markdown
-# Filesystem has: app/page.js, app/layout.js
-
-# Tree shows: app/page.js, app/main.js
-
-ERROR: Structure mismatch
-```
-
-**Solution:** Regenerate tree to get fresh baseline.
-
-## ⚠️ Validation Rules
-
-1. **Cannot combine markers**
-
-   ```markdown
-   ❌ src/file.js [+] [-]
-   ```
-
-2. **Must use markers for changes**
-
-   ```markdown
-   ❌ Adding newfile.js without [+] marker
-   ✅ newfile.js [+]
-   ```
-
-3. **Marker format strict**
-   - Exactly one space before marker
-   - Only `[+]`, `[-]`, `[~ name]` allowed
-
-## ⌨️ Keyboard Shortcuts
-
-| Action      | Shortcut            |
-| ----------- | ------------------- |
-| **Preview** | `Ctrl+Shift+Enter`  |
-| **Apply**   | `Ctrl+Enter`        |
-| **Save**    | `Ctrl+S` (no apply) |
-
-## 🔄 Complete Workflow
-
-```
 1. Right-click folder → Generate Tree
-2. Edit tree, add markers
+2. Edit structure & add markers
 3. Ctrl+Shift+Enter → Preview
 4. Ctrl+Enter → Apply
-```
 
-## 📊 Operation Order
+🔐 Safety Guarantees
 
-1. Create folders (parent first)
-2. Create files
-3. Rename files/folders
-4. Delete files
-5. Delete folders (deepest first)
+Workspace scoped only
 
-## 🛡️ Safety Features
+No absolute paths
 
-- ✅ Structure validation before operations
-- ✅ Workspace scoped
-- ✅ No absolute paths, no `..`
-- ✅ Confirmation for deletes
-- ✅ Safe execution order
+No .. traversal
 
-## 📝 Example
+Safe execution order:
 
-```markdown
-# Generate
+Create folders
 
-src/
-├─ components/
-│ └─ Button.tsx
+Create files
 
-# Add marker
+Rename
 
-src/
-├─ components/
-│ ├─ Button.tsx
-│ └─ Input.tsx [+]
+Delete files
 
-# Preview → Apply
+Delete folders
 
-# Result: Input.tsx created
-```
+Confirmation required for deletes
 
-## 🆚 v2.x vs v1.0
+🧠 Philosophy
 
-| Feature              | v2.x  | v1.0        |
-| -------------------- | ----- | ----------- |
-| UUIDs                | ✅    | ❌ Removed  |
-| Diff engine          | ✅    | ❌ Removed  |
-| Operation markers    | ❌    | ✅ Explicit |
-| Structure validation | Drift | ✅ Strict   |
+"A declarative filesystem refactoring language inside Markdown."
 
-## 🎯 Philosophy
+FILETREEFORGE v1 is:
 
-> "A declarative filesystem refactoring language inside Markdown."
+Explicit
 
-**v1.0 is:**
+Predictable
 
-- **Explicit**: You mark what you want
-- **Predictable**: No hidden magic
-- **Safe**: Structure validated before operations
+Safe
 
----
+Clean
 
-**FILETREEFORGE v1.0 - Declarative filesystem refactoring.** 🚀
+Developer-focused
+
+📦 Version
+
+v1.0.0 — Initial public release
