@@ -1,23 +1,23 @@
 /**
- * Markdown tree parser with tree symbols and UUID support
- * Parses markdown representation into TreeNode structure
+ * Markdown parser with explicit operation markers
+ * Parses [+], [-], [~ newName] markers
  */
 
-import { TreeNode, ParseError, ValidationResult } from "../types";
+import { TreeNode, ParseError, Operation } from "../types";
 import { PathUtils } from "../utils/pathUtils";
-import { v4 as uuidv4 } from "uuid";
 
 interface ParsedLine {
   indent: number;
   name: string;
   isFolder: boolean;
   lineNumber: number;
-  id?: string;
+  operation?: Operation;
+  renameTo?: string;
 }
 
 export class MarkdownParser {
   /**
-   * Parse markdown content into tree structure
+   * Parse markdown content with operation markers
    */
   static parse(content: string): {
     tree: TreeNode | null;
@@ -26,34 +26,39 @@ export class MarkdownParser {
     const errors: ParseError[] = [];
     const lines = content.split("\n");
 
-    // Find the start of the tree (after headers and comments)
-    let startIndex = 0;
-    for (let i = 0; i < lines.length; i++) {
-      const trimmed = lines[i].trim();
-      if (
-        trimmed.startsWith("#") ||
-        trimmed === "" ||
-        trimmed.startsWith("<!--")
-      ) {
-        startIndex = i + 1;
-      } else {
-        break;
-      }
-    }
-
     const parsedLines: ParsedLine[] = [];
 
-    // Parse each line
-    for (let i = startIndex; i < lines.length; i++) {
+    for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const lineNumber = i + 1;
+      const trimmed = line.trim();
 
-      // Skip empty lines and comments
-      if (line.trim() === "" || line.trim().startsWith("<!--")) {
+      // Skip empty lines
+      if (trimmed === "") {
         continue;
       }
 
-      // Parse line
+      // Skip all lines starting with # (headers, comments)
+      if (trimmed.startsWith("#")) {
+        continue;
+      }
+
+      // Skip HTML comments
+      if (trimmed.startsWith("<!--")) {
+        continue;
+      }
+
+      // Only parse tree structure lines
+      const hasTreeSymbol =
+        line.includes("├─") || line.includes("└─") || line.includes("│");
+      const looksLikePath =
+        trimmed.endsWith("/") || trimmed.match(/\.\w+\s*(\[|$)/);
+
+      if (!hasTreeSymbol && !looksLikePath) {
+        continue;
+      }
+
+      // Parse the line
       const parsed = this.parseLine(line, lineNumber);
       if (parsed.error) {
         errors.push(parsed.error);
@@ -89,47 +94,95 @@ export class MarkdownParser {
   }
 
   /**
-   * Parse a single line with tree symbols
+   * Parse a single line with operation markers
    */
   private static parseLine(
     line: string,
     lineNumber: number,
   ): { line?: ParsedLine; error?: ParseError } {
-    // Remove tree symbols (├─ │ └─) for parsing
-    const cleanLine = line.replace(/[├└│]─\s*/g, "");
+    // Remove tree symbols for parsing
+    let cleanLine = line.replace(/[├└│]─?\s*/g, "");
+    cleanLine = cleanLine.trim();
 
-    // Calculate indent based on spaces/tree symbols
-    const indentMatch = line.match(/^(\s*[├└│]?\s*)/);
-    const indentLevel = indentMatch
-      ? Math.floor(indentMatch[1].length / 3) * 2
-      : 0;
+    // Calculate indent
+    const leadingSpaces = line.match(/^(\s*)/)?.[1].length || 0;
+    const pipeCount = (line.split(/[├└]/)[0].match(/│/g) || []).length;
+    const indentLevel = pipeCount * 2;
 
-    // Extract name and optional UUID
-    const nameMatch = cleanLine
-      .trim()
-      .match(/^(.+?)(?:\s*<!--\s*id:\s*([a-f0-9-]+)\s*-->)?$/);
-    if (!nameMatch) {
+    // Extract operation marker and name
+    let operation: Operation | undefined;
+    let renameTo: string | undefined;
+    let name = cleanLine;
+
+    // Check for operation markers at end of line
+    // [+] for create
+    if (cleanLine.endsWith("[+]")) {
+      operation = "create";
+      name = cleanLine.replace(/\s*\[\+\]\s*$/, "").trim();
+    }
+    // [-] for delete
+    else if (cleanLine.endsWith("[-]")) {
+      operation = "delete";
+      name = cleanLine.replace(/\s*\[-\]\s*$/, "").trim();
+    }
+    // [~ newName] for rename
+    else if (cleanLine.match(/\[~\s+.+\]$/)) {
+      operation = "rename";
+      const match = cleanLine.match(/^(.+?)\s+\[~\s+(.+?)\]$/);
+      if (match) {
+        name = match[1].trim();
+        renameTo = match[2].trim();
+      } else {
+        return {
+          error: {
+            line: lineNumber,
+            message: `Invalid rename marker format at line ${lineNumber}`,
+          },
+        };
+      }
+    }
+
+    // Check for multiple markers (invalid)
+    const markerCount = (cleanLine.match(/\[\+\]|\[-\]|\[~\s+.+?\]/g) || [])
+      .length;
+    if (markerCount > 1) {
       return {
         error: {
           line: lineNumber,
-          message: `Invalid line format: "${line.trim()}"`,
+          message: "Cannot combine multiple operation markers on one line",
         },
       };
     }
 
-    const name = nameMatch[1].trim();
-    const id = nameMatch[2] || uuidv4();
-
-    // Determine if folder (ends with /)
+    // Determine if folder
     const isFolder = name.endsWith("/");
     const cleanName = isFolder ? name.slice(0, -1) : name;
 
     // Validate name
+    if (!cleanName || cleanName === "") {
+      return {
+        error: {
+          line: lineNumber,
+          message: `Empty node name at line ${lineNumber}`,
+        },
+      };
+    }
+
     if (!PathUtils.isValidNodeName(cleanName)) {
       return {
         error: {
           line: lineNumber,
           message: `Invalid node name: "${cleanName}"`,
+        },
+      };
+    }
+
+    // Validate rename target
+    if (renameTo && !PathUtils.isValidNodeName(renameTo)) {
+      return {
+        error: {
+          line: lineNumber,
+          message: `Invalid rename target: "${renameTo}"`,
         },
       };
     }
@@ -140,7 +193,8 @@ export class MarkdownParser {
         name: cleanName,
         isFolder,
         lineNumber,
-        id,
+        operation,
+        renameTo,
       },
     };
   }
@@ -150,7 +204,6 @@ export class MarkdownParser {
    */
   private static buildTree(lines: ParsedLine[]): TreeNode {
     const root: TreeNode = {
-      id: uuidv4(),
       name: "root",
       type: "folder",
       children: [],
@@ -162,13 +215,14 @@ export class MarkdownParser {
 
     for (const line of lines) {
       const node: TreeNode = {
-        id: line.id || uuidv4(),
         name: line.name,
         type: line.isFolder ? "folder" : "file",
         children: line.isFolder ? [] : undefined,
+        operation: line.operation,
+        renameTo: line.renameTo,
       };
 
-      // Find parent (pop stack until we find appropriate parent)
+      // Find parent
       while (
         stack.length > 0 &&
         stack[stack.length - 1].indent >= line.indent
@@ -198,16 +252,5 @@ export class MarkdownParser {
     }
 
     return root;
-  }
-
-  /**
-   * Validate markdown content
-   */
-  static validate(content: string): ValidationResult {
-    const { errors } = this.parse(content);
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
   }
 }

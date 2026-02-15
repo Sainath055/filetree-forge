@@ -1,48 +1,39 @@
 /**
- * Apply changes command
- * Applies parsed tree to filesystem with safety checks
- * Can be called from Markdown tree or Preview document
+ * Apply changes command - validates and executes operations
  */
 
 import * as vscode from "vscode";
-import { TreeNode } from "../types";
 import { MarkdownParser } from "../parser/markdownParser";
-import { DiffEngine } from "../diff/diffTrees";
-import { ApplyEngine } from "../fs/applyDiff";
+import { OperationExtractor } from "../fs/operationExtractor";
+import { OperationExecutor } from "../fs/operationExecutor";
+import { StructureValidator } from "../fs/structureValidator";
 import { PathUtils } from "../utils/pathUtils";
 import { TreeStateManager } from "./stateManager";
-import { scanDirectory } from "../fs/scanTree";
-import { DriftDetector } from "../fs/driftDetector";
 
 export class ApplyChangesCommand {
-  /**
-   * Apply changes from current document or most recent preview
-   */
   static async execute(): Promise<void> {
     try {
       const editor = vscode.window.activeTextEditor;
+
+      // Handle apply from preview
+      if (
+        editor &&
+        editor.document.languageId === "plaintext" &&
+        editor.document.getText().startsWith("PREVIEW MODE")
+      ) {
+        await this.applyFromPreview();
+        return;
+      }
+
       if (!editor) {
         vscode.window.showWarningMessage("No active editor");
         return;
       }
 
-      // Check if we're in a preview document
-      if (
-        editor.document.languageId === "plaintext" &&
-        editor.document.getText().startsWith("PREVIEW MODE")
-      ) {
-        // We're in preview - need to find the original markdown document
-        // Get the most recent tree from state
-        await this.applyFromState();
-        return;
-      }
-
-      // We're in markdown document - parse and apply
       const content = editor.document.getText();
 
-      // Parse current content
+      // Parse tree
       const parseResult = MarkdownParser.parse(content);
-
       if (!parseResult.tree) {
         const errorMsg = parseResult.errors
           .map((e) => (e.line ? `Line ${e.line}: ${e.message}` : e.message))
@@ -51,142 +42,73 @@ export class ApplyChangesCommand {
         return;
       }
 
-      const newTree = parseResult.tree;
-
-      await this.executeWithTree(editor, newTree);
-    } catch (error) {
-      vscode.window.showErrorMessage(
-        `Apply failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  }
-
-  /**
-   * Apply from state (when called from preview)
-   */
-  private static async applyFromState(): Promise<void> {
-    // Find the markdown document with tree
-    const editors = vscode.window.visibleTextEditors;
-    let treeEditor: vscode.TextEditor | undefined;
-
-    for (const ed of editors) {
-      if (
-        ed.document.languageId === "markdown" &&
-        ed.document.getText().includes("<!-- FILETREEFORGE FORMAT")
-      ) {
-        treeEditor = ed;
-        break;
-      }
-    }
-
-    if (!treeEditor) {
-      vscode.window.showErrorMessage(
-        "Cannot find the tree document. Please switch to the Markdown tree and try again.",
-      );
-      return;
-    }
-
-    // Parse the tree document
-    const content = treeEditor.document.getText();
-    const parseResult = MarkdownParser.parse(content);
-
-    if (!parseResult.tree) {
-      vscode.window.showErrorMessage("Failed to parse tree document");
-      return;
-    }
-
-    await this.executeWithTree(treeEditor, parseResult.tree);
-  }
-
-  /**
-   * Apply changes with a provided tree
-   */
-  static async executeWithTree(
-    editor: vscode.TextEditor,
-    newTree: TreeNode,
-  ): Promise<void> {
-    try {
-      const config = vscode.workspace.getConfiguration("filetreeforge");
-      const ignorePatterns = config.get<string[]>("ignorePatterns") || [];
-      const confirmBeforeApply = config.get<boolean>(
-        "confirmBeforeApply",
-        true,
-      );
-
-      // Get last applied tree
-      let oldTree = TreeStateManager.getLastAppliedTree();
-
-      if (!oldTree) {
-        vscode.window.showWarningMessage(
-          "No baseline tree found. Generate a tree first.",
-        );
-        return;
-      }
-
-      // CRITICAL: Re-scan filesystem to detect drift
+      const tree = parseResult.tree;
       const workspaceRoot =
         TreeStateManager.getLastGeneratedRootPath() ||
         PathUtils.getWorkspaceRoot();
+      const config = vscode.workspace.getConfiguration("filetreeforge");
+      const ignorePatterns = config.get<string[]>("ignorePatterns") || [];
 
-      const currentFilesystemTree = await scanDirectory(
-        workspaceRoot,
+      // CRITICAL: Validate structure matches filesystem
+      const validation = await StructureValidator.validate(
+        tree,
         workspaceRoot,
         ignorePatterns,
       );
 
-      // Check for filesystem drift
-      const drift = DriftDetector.detectDrift(oldTree, currentFilesystemTree);
+      if (!validation.valid && validation.mismatch) {
+        const mismatchMsg = StructureValidator.formatMismatch(
+          validation.mismatch,
+        );
 
-      if (drift.hasDrift) {
-        // Show drift warning
-        const driftReport = DriftDetector.formatDriftReport(drift);
-
-        const choice = await vscode.window.showWarningMessage(
-          "Filesystem has changed since last apply.",
-          { modal: true, detail: driftReport },
-          "Refresh Baseline",
-          "Continue Anyway",
+        const choice = await vscode.window.showErrorMessage(
+          "Structure mismatch detected",
+          { modal: true, detail: mismatchMsg },
+          "Regenerate Tree",
           "Cancel",
         );
 
-        if (choice === "Cancel" || !choice) {
-          return;
-        }
-
-        if (choice === "Refresh Baseline") {
-          vscode.window.showInformationMessage(
-            "Please regenerate the tree from the filesystem to get a fresh baseline.",
+        if (choice === "Regenerate Tree") {
+          await vscode.commands.executeCommand(
+            "filetreeforge.generateMarkdown",
           );
-          return;
         }
-
-        // If "Continue Anyway", update baseline to current filesystem
-        oldTree = currentFilesystemTree;
-      }
-
-      // Generate diff
-      const diff = DiffEngine.diff(oldTree, newTree);
-
-      if (DiffEngine.isEmpty(diff)) {
-        vscode.window.showInformationMessage("No changes detected");
         return;
       }
 
-      // Preview operations
-      const operations = await ApplyEngine.applyDiff(
-        diff,
-        oldTree,
-        newTree,
+      // Extract operations
+      const operations = OperationExtractor.extract(tree);
+
+      // Validate operations
+      const validationErrors = OperationExtractor.validate(operations, tree);
+      if (validationErrors.length > 0) {
+        vscode.window.showErrorMessage(
+          `Operation errors:\n${validationErrors.join("\n")}`,
+        );
+        return;
+      }
+
+      if (operations.length === 0) {
+        vscode.window.showInformationMessage("No operations to apply");
+        return;
+      }
+
+      // Prepare file operations
+      const fileOps = OperationExecutor.prepareOperations(
+        operations,
         workspaceRoot,
-        true,
       );
 
-      // Show confirmation if enabled
+      // Confirm if needed
+      const confirmBeforeApply = config.get<boolean>(
+        "confirmBeforeApply",
+        true,
+      );
       if (confirmBeforeApply) {
-        const hasDeletes = operations.some((op) => op.type === "delete");
+        const hasDeletes = fileOps.some((op) => op.type === "delete");
         const message = hasDeletes
-          ? `⚠️ This will DELETE ${operations.filter((op) => op.type === "delete").length} item(s) and perform ${operations.length} total operations. Continue?`
-          : `Apply ${operations.length} operation(s) to filesystem?`;
+          ? `⚠️ This will DELETE ${fileOps.filter((op) => op.type === "delete").length} item(s). Continue?`
+          : `Apply ${fileOps.length} operation(s)?`;
 
         const answer = await vscode.window.showWarningMessage(
           message,
@@ -195,42 +117,63 @@ export class ApplyChangesCommand {
           "Cancel",
         );
 
-        if (answer === "Cancel" || !answer) {
+        if (answer !== "Apply") {
           return;
         }
       }
 
-      // Apply changes
+      // Execute operations
       await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: "Applying changes to filesystem...",
+          title: "Applying changes...",
           cancellable: false,
         },
         async () => {
-          await ApplyEngine.applyDiff(
-            diff,
-            oldTree!,
-            newTree,
-            workspaceRoot,
-            false,
-          );
+          await OperationExecutor.execute(fileOps, false);
         },
       );
 
-      // Update last applied tree
+      // Update baseline (regenerate tree without markers)
+      const { scanDirectory } = await import("../fs/scanTree");
+      const newTree = await scanDirectory(
+        workspaceRoot,
+        workspaceRoot,
+        ignorePatterns,
+      );
       TreeStateManager.setLastAppliedTree(newTree);
 
-      // Close temporary documents
+      // Close temp documents
       await TreeStateManager.closeTemporaryDocuments();
 
       vscode.window.showInformationMessage(
-        `✅ Applied ${operations.length} operation(s) successfully`,
+        `✅ Applied ${fileOps.length} operation(s) successfully`,
       );
     } catch (error) {
       vscode.window.showErrorMessage(
         `Apply failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
+  }
+
+  private static async applyFromPreview(): Promise<void> {
+    const editors = vscode.window.visibleTextEditors;
+    let treeEditor: vscode.TextEditor | undefined;
+
+    for (const ed of editors) {
+      if (ed.document.languageId === "markdown") {
+        treeEditor = ed;
+        break;
+      }
+    }
+
+    if (!treeEditor) {
+      vscode.window.showErrorMessage("Cannot find tree document");
+      return;
+    }
+
+    // Switch to tree editor and apply
+    await vscode.window.showTextDocument(treeEditor.document);
+    await this.execute();
   }
 }

@@ -1,29 +1,28 @@
 /**
  * Core data model for FILETREEFORGE
- * The TreeNode is the single source of truth for all representations
+ * The TreeNode is the single source of truth for all representations with explicit operation markers
  */
 
 export interface TreeNode {
-  /** Stable UUID that persists between parses - used for rename detection */
-  id: string;
   /** Node name (no slashes, no paths) */
   name: string;
   /** Node type */
   type: "file" | "folder";
   /** Children nodes (only valid for folders) */
   children?: TreeNode[];
+  /** Explicit operation marker */
+  operation?: Operation;
+  /** New name for rename operation */
+  renameTo?: string;
 }
 
-export interface TreeDiff {
-  /** Nodes to be created */
-  created: TreeNode[];
-  /** Nodes to be deleted */
-  deleted: TreeNode[];
-  /** Nodes to be renamed */
-  renamed: {
-    from: TreeNode;
-    to: TreeNode;
-  }[];
+export type Operation = "create" | "delete" | "rename";
+
+export interface OperationNode {
+  node: TreeNode;
+  path: string[];
+  operation: Operation;
+  newPath?: string[]; // For rename
 }
 
 export interface FileOperation {
@@ -44,9 +43,10 @@ export interface ValidationResult {
   errors: ParseError[];
 }
 
-export interface FilesystemDriftResult {
-  hasDrift: boolean;
-  addedFiles: string[];
-  deletedFiles: string[];
-  modifiedFiles: string[];
+export interface StructuralMismatch {
+  expected: string[];
+  actual: string[];
+  added: string[];
+  removed: string[];
+  modified: string[];
 }
