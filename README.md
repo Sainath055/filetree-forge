@@ -48,66 +48,94 @@ app/
 
 Clean structure. No markers. No metadata.
 
-2️⃣ Declare Operations
+---
+
+## 2️⃣ Declare Operations
 
 You explicitly mark what you want to change.
 
-➕ Create
+### ➕ Create
 
-Add [+] at end of line:
+Add `[+]` at end of line:
 
+```md
 helpers.js [+]
+```
 
-➖ Delete
+---
 
-Add [-] at end of line:
+### ➖ Delete
 
+Add `[-]` at end of line:
+
+```md
 route.js [-]
+```
 
-🔁 Rename
+---
 
-Use [~ newName]:
+### 🔁 Rename
 
+Use `[~ newName]`:
+
+```md
 functions/ [~ handlers]
+```
 
-3️⃣ Preview Changes
+---
+
+## 3️⃣ Preview Changes
 
 Press:
 
+```
 Ctrl + Shift + Enter
+```
 
 Preview shows a dry run:
 
+```
 PREVIEW MODE
 ═══════════════════════════════
 
 This is a dry run. No changes have been applied yet.
 
 CREATE:
-
-- api/helpers.js
+  + api/helpers.js
 
 RENAME:
-api/functions → api/handlers
+  api/functions → api/handlers
+```
 
 Nothing is modified yet.
 
-4️⃣ Apply Changes
+---
+
+## 4️⃣ Apply Changes
 
 Press:
 
+```
 Ctrl + Enter
+```
 
 Changes are applied safely.
 
 Tree and preview tabs close automatically.
 
-📋 Operation Markers
-Marker Meaning
-[+] Create file or folder
-[-] Delete file or folder
-[~ newName] Rename file or folder
-⚠ Structure Validation (Important)
+---
+
+# 📋 Operation Markers
+
+| Marker        | Meaning               |
+| ------------- | --------------------- |
+| `[+]`         | Create file or folder |
+| `[-]`         | Delete file or folder |
+| `[~ newName]` | Rename file or folder |
+
+---
+
+# ⚠ Structure Validation (Important)
 
 The tree structure — excluding markers — must match the real filesystem.
 
@@ -115,66 +143,69 @@ If it does not match, the extension will block execution.
 
 This prevents:
 
-Accidental mass deletes
-
-Stale diffs
-
-Applying changes to outdated structure
+- Accidental mass deletes
+- Stale diffs
+- Applying changes to outdated structure
 
 If you see a mismatch error:
 
 → Regenerate the tree to refresh baseline.
 
-⌨ Keyboard Shortcuts
-Action Shortcut
-Preview Ctrl + Shift + Enter
-Apply Ctrl + Enter
-Save Ctrl + S (does NOT apply)
-🔄 Complete Workflow
+---
 
+# ⌨ Keyboard Shortcuts
+
+| Action  | Shortcut                    |
+| ------- | --------------------------- |
+| Preview | `Ctrl + Shift + Enter`      |
+| Apply   | `Ctrl + Enter`              |
+| Save    | `Ctrl + S` (does NOT apply) |
+
+---
+
+# 🔄 Complete Workflow
+
+```
 1. Right-click folder → Generate Tree
 2. Edit structure & add markers
 3. Ctrl+Shift+Enter → Preview
 4. Ctrl+Enter → Apply
+```
 
-🔐 Safety Guarantees
+---
 
-Workspace scoped only
+# 🔐 Safety Guarantees
 
-No absolute paths
+- Workspace scoped only
+- No absolute paths
+- No `..` traversal
+- Safe execution order:
+  1. Create folders
+  2. Create files
+  3. Rename
+  4. Delete files
+  5. Delete folders
 
-No .. traversal
+- Confirmation required for deletes
 
-Safe execution order:
+---
 
-Create folders
+# 🧠 Philosophy
 
-Create files
-
-Rename
-
-Delete files
-
-Delete folders
-
-Confirmation required for deletes
-
-🧠 Philosophy
-
-"A declarative filesystem refactoring language inside Markdown."
+> "A declarative filesystem refactoring language inside Markdown."
 
 FILETREEFORGE v1 is:
 
-Explicit
+- Explicit
+- Predictable
+- Safe
+- Clean
+- Developer-focused
 
-Predictable
+---
 
-Safe
+# 📦 Version
 
-Clean
+**v1.0.0 — Initial public release**
 
-Developer-focused
-
-📦 Version
-
-v1.0.0 — Initial public release
+---
