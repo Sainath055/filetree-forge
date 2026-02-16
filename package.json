@@ -1,12 +1,30 @@
 {
-  "name": "filetreeforge",
-  "displayName": "FILETREEFORGE",
+  "name": "filetree-forge",
+  "displayName": "FileTree Forge",
   "description": "Declarative filesystem refactoring with explicit operation markers",
   "version": "1.0.0",
-  "publisher": "filetreeforge",
+  "publisher": "YOUR-PUBLISHER-ID",
+  "license": "MIT",
+  "homepage": "https://github.com/Sainath055/filetree-forge#readme",
+  "bugs": {
+    "url": "https://github.com/Sainath055/filetree-forge/issues"
+  },
   "engines": {
     "vscode": "^1.109.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/filetree-forge"
+  },
+  "keywords": [
+    "filesystem",
+    "refactoring",
+    "markdown",
+    "file management",
+    "folder structure",
+    "operations",
+    "declarative"
+  ],
   "categories": [
     "Other"
   ],
@@ -55,7 +73,7 @@
       }
     ],
     "configuration": {
-      "title": "FILETREEFORGE",
+      "title": "FileTree Forge",
       "properties": {
         "filetreeforge.confirmBeforeApply": {
           "type": "boolean",

@@ -1,99 +1,107 @@
-# Change Log
+# Changelog
 
-## [1.0.0] - 2026-02-15 - Initial Public Release
+All notable changes to FileTree Forge will be documented in this file.
 
-### 🚀 FILETREEFORGE v1
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-First official release of FILETREEFORGE.
+## [1.0.0] - 2024-02-09
 
-A declarative filesystem refactoring tool using Markdown inside VS Code.
+### 🎉 Initial Release
 
----
+FileTree Forge is a declarative filesystem refactoring extension for VS Code that uses explicit operation markers in Markdown.
 
-## ✨ Core Features
+### Features
 
-### 📝 Markdown-Only Structure Editing
+#### Core Functionality
 
-- Clean ASCII tree format
-- No JSON mode
-- No hidden metadata
-- Human-readable and editable
+- **Generate Clean Trees**: Right-click any folder to generate a clean Markdown representation
+- **Operation Markers**: Three explicit markers for filesystem operations:
+  - `[+]` - Create files and folders
+  - `[-]` - Delete files and folders
+  - `[~ newName]` - Rename files and folders
+- **Structure Validation**: Validates tree matches filesystem before executing operations
+- **Preview Mode**: Review all operations grouped by type before applying
+- **Safe Execution**: Operations execute in safe order to prevent errors
 
----
+#### User Experience
 
-### 🔥 Explicit Operation Markers
+- **Keyboard Shortcuts**:
+  - `Ctrl+Shift+Enter` / `Cmd+Shift+Enter` - Preview changes
+  - `Ctrl+Enter` / `Cmd+Enter` - Apply changes
+  - `Ctrl+S` / `Cmd+S` - Save file only (no operations)
+- **Auto-Close**: Tree and preview documents close automatically after successful apply
+- **Context Menu**: Right-click integration in Explorer for easy tree generation
 
-Operations are fully declarative:
+#### Safety & Validation
 
-- `[+]` → Create file or folder
-- `[-]` → Delete file or folder
-- `[~ newName]` → Rename file or folder
-
-No automatic diff guessing.  
-No implicit rename detection.  
-No background magic.
-
----
-
-### 🧠 Deterministic Behavior
-
-- Structural edits require operation markers
-- No silent delete + recreate
-- No heuristic renames
-- Clear validation before execution
-
----
-
-### 👁 Preview Mode
-
-- `Ctrl + Shift + Enter` → Preview changes
-- `Ctrl + Enter` → Apply changes
-- Clear grouped operations (Create / Rename / Delete)
-- Destructive changes require confirmation
-
----
-
-### 🔍 Filesystem Drift Detection
-
-Before preview or apply:
-
-- Filesystem is re-scanned
-- Detects external modifications
-- Blocks stale operations
-- Offers refresh option
-
----
-
-### 🛡 Safety Guarantees
-
-- Workspace-scoped only
-- No absolute paths
-- No `..` parent traversal
-- Safe execution order:
-  1. Create folders
+- Workspace-scoped operations (no access outside workspace)
+- Path validation (no absolute paths, no `..` references)
+- Structure validation before operations (prevents stale operations)
+- Confirmation dialogs for destructive operations
+- Safe operation ordering:
+  1. Create folders (parent first)
   2. Create files
-  3. Rename
+  3. Rename operations
   4. Delete files
-  5. Delete folders
+  5. Delete folders (deepest first)
+
+#### Configuration
+
+- `filetree-forge.confirmBeforeApply` - Show confirmation before applying (default: true)
+- `filetree-forge.ignorePatterns` - Patterns to ignore when generating trees (default: node_modules, .git, etc.)
+
+### Architecture
+
+#### Design Principles
+
+- **Explicit over Implicit**: All operations must be explicitly marked
+- **Validation First**: Structure must match filesystem before operations
+- **No Hidden Magic**: No automatic diffing, no rename guessing
+- **Clean Output**: No UUIDs, metadata, or clutter in generated trees
+
+#### Components
+
+- **Operation Extractor**: Extracts marked operations from tree
+- **Operation Executor**: Executes operations in safe order
+- **Structure Validator**: Validates tree structure matches filesystem
+- **Markdown Parser**: Parses tree with operation markers
+- **Tree Serializer**: Generates clean tree output
+
+### Known Limitations
+
+- No undo functionality (use version control)
+- Cannot move files in single operation (requires delete + create)
+- File contents are not editable (structure only)
+- Each tree is scoped to a single folder
+- No visual diff view (operations shown as text)
+
+### Requirements
+
+- Visual Studio Code 1.85.0 or higher
+- Node.js and npm (for development)
+
+### Documentation
+
+- README.md - Complete user guide
+- docs/QUICKSTART.md - 5-minute getting started guide
+- docs/INSTALLATION.md - Installation and setup
+- docs/ARCHITECTURE.md - Technical architecture
+- docs/DEVELOPER_GUIDE.md - Contributing guide
 
 ---
 
-### 🧹 Smart UX
+## Future Considerations
 
-- Right-click folder → Generate Markdown Tree
-- Tree and preview tabs auto-close after apply
-- `Ctrl + S` never mutates filesystem
+Items being considered for future releases:
+
+- Visual diff view for preview
+- Batch operations on multiple folders
+- Template system for common structures
+- Export/import tree definitions
+- Integration with version control systems
+- Move operation (as alternative to delete + create)
 
 ---
 
-## 🧭 Philosophy
-
-> “A declarative filesystem refactoring language inside Markdown.”
-
-FILETREEFORGE v1 focuses on:
-
-- Clarity
-- Explicit intent
-- Predictability
-- Safety
-- Clean user experience
+**Note**: This changelog follows semantic versioning. Breaking changes will be clearly marked in future releases.
