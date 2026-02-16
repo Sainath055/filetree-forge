@@ -61,18 +61,14 @@ export class ApplyChangesCommand {
           validation.mismatch,
         );
 
-        const choice = await vscode.window.showErrorMessage(
-          "Structure mismatch detected",
-          { modal: true, detail: mismatchMsg },
-          "Regenerate Tree",
-          "Cancel",
-        );
+        await vscode.window.showErrorMessage(mismatchMsg, { modal: true });
 
-        if (choice === "Regenerate Tree") {
-          await vscode.commands.executeCommand(
-            "filetreeforge.generateMarkdown",
-          );
-        }
+        // await vscode.window.showErrorMessage(
+        //   "Structure mismatch detected",
+        //   { modal: true, detail: mismatchMsg },
+        //   "Close",
+        // );
+
         return;
       }
 
