@@ -18,16 +18,24 @@
   },
   "keywords": [
     "filesystem",
-    "refactoring",
+    "file tree",
+    "directory tree",
     "markdown",
-    "project-structure",
-    "file-management",
-    "developer-tools"
+    "refactoring",
+    "project structure",
+    "folder structure",
+    "file management",
+    "developer tools",
+    "tree view",
+    "code organization",
+    "vscode extension",
+    "file operations",
+    "workspace tools",
+    "explorer"
   ],
   "categories": [
     "Other",
-    "File Management",
-    "Programming Languages"
+    "Visualization"
   ],
   "activationEvents": [
     "onCommand:filetreeforge.generateMarkdown",
